@@ -15,7 +15,9 @@ vim.pack.add({
 require("mason").setup({})
 
 require("blink.cmp").setup({
-  fuzzy = { implementation = "prefer_rust_with_warning" },
+  -- Rust matcher is built on install/update when cargo exists (config/pack.lua);
+  -- otherwise fall back to Lua quietly instead of warning on every startup
+  fuzzy = { implementation = "prefer_rust" },
   signature = { enabled = true },
   completion = {
     list = {

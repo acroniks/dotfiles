@@ -22,6 +22,20 @@ local function build_fzf(cwd)
   end
 end
 
+-- blink.cmp tracks main (untagged), so there's no prebuilt binary to download; building
+-- needs cargo. Without it blink.cmp falls back to its Lua fuzzy matcher (see plugins/lsp.lua).
+local function build_blink(active)
+  if vim.fn.executable("cargo") ~= 1 then
+    vim.notify("cargo not found; skipping blink.cmp native build (using Lua matcher)", vim.log.levels.WARN)
+    return
+  end
+  if not active then
+    vim.cmd.packadd("blink.lib")
+    vim.cmd.packadd("blink.cmp")
+  end
+  require("blink.cmp").build():pwait()
+end
+
 vim.api.nvim_create_autocmd("PackChanged", {
   callback = function(ev)
     local name, kind = ev.data.spec.name, ev.data.kind
@@ -31,6 +45,8 @@ vim.api.nvim_create_autocmd("PackChanged", {
 
     if name == "telescope-fzf-native.nvim" then
       build_fzf(ev.data.path)
+    elseif name == "blink.cmp" then
+      build_blink(ev.data.active)
     elseif name == "nvim-treesitter" and M.ts_can_build then
       if not ev.data.active then
         vim.cmd.packadd("nvim-treesitter")

@@ -10,6 +10,7 @@ vim.pack.add({
   { src = "https://github.com/saghen/blink.lib" },
   { src = "https://github.com/saghen/blink.cmp" },
   { src = "https://github.com/rafamadriz/friendly-snippets" },
+  { src = "https://github.com/Hoffs/omnisharp-extended-lsp.nvim" },
 })
 
 require("mason").setup({})
@@ -96,13 +97,31 @@ vim.api.nvim_create_autocmd("LspAttach", {
       map(mode, lhs, rhs, { buffer = event.buf, desc = desc })
     end
 
+    -- OmniSharp needs omnisharp-extended to follow these into metadata/decompiled sources
+    local nav = {
+      definitions = tb.lsp_definitions,
+      references = tb.lsp_references,
+      implementations = tb.lsp_implementations,
+      type_definitions = tb.lsp_type_definitions,
+    }
+    local client = vim.lsp.get_client_by_id(event.data.client_id)
+    if client and client.name == "omnisharp" then
+      local ox = require("omnisharp_extended")
+      nav = {
+        definitions = ox.telescope_lsp_definition,
+        references = ox.telescope_lsp_references,
+        implementations = ox.telescope_lsp_implementation,
+        type_definitions = ox.telescope_lsp_type_definition,
+      }
+    end
+
     -- Navigation (Telescope pickers when there can be several results)
-    bmap("n", "gd", tb.lsp_definitions, "Go to definition")
+    bmap("n", "gd", nav.definitions, "Go to definition")
     bmap("n", "gD", vim.lsp.buf.declaration, "Go to declaration")
-    bmap("n", "grr", tb.lsp_references, "References")
-    bmap("n", "<leader>gr", tb.lsp_references, "References")
-    bmap("n", "gri", tb.lsp_implementations, "Implementations")
-    bmap("n", "grt", tb.lsp_type_definitions, "Type definition")
+    bmap("n", "grr", nav.references, "References")
+    bmap("n", "<leader>gr", nav.references, "References")
+    bmap("n", "gri", nav.implementations, "Implementations")
+    bmap("n", "grt", nav.type_definitions, "Type definition")
     bmap("n", "<leader>ci", tb.lsp_incoming_calls, "Incoming calls")
     bmap("n", "<leader>co", tb.lsp_outgoing_calls, "Outgoing calls")
 
@@ -113,7 +132,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     -- Editing
     bmap("n", "<leader>rn", vim.lsp.buf.rename, "Rename symbol")
     bmap({ "n", "x" }, "<leader>ca", vim.lsp.buf.code_action, "Code action")
-    bmap({ "n", "x" }, "<leader>lf", function() vim.lsp.buf.format({ async = true }) end, "Format")
+    -- <leader>lf (format) lives in plugins/format.lua so it works without an LSP too
 
     -- Diagnostics
     bmap("n", "<leader>d", vim.diagnostic.open_float, "Line diagnostics")

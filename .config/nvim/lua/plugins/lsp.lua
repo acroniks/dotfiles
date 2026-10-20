@@ -54,9 +54,58 @@ vim.lsp.config("lua_ls", {
   },
 })
 
--- OmniSharp instead of roslyn_ls: roslyn-language-server needs .NET 10, this works on .NET 8.
--- Its semantic token legend is malformed (token names with spaces), which is what got the
--- server shut down before, so drop that capability and let treesitter do highlighting.
+-- C#: prefer Roslyn, fall back to OmniSharp. Roslyn needs a newer .NET runtime (10 today)
+-- than some machines have, so when Mason's install is missing borrow the server and the
+-- runtime the VS Code C# extension downloaded for itself. Projects still build with the
+-- machine's own SDK either way.
+local function newest(paths, pattern)
+  local best, best_v
+  for _, p in ipairs(paths) do
+    local v = vim.version.parse(p:match(pattern) or "", { strict = false })
+    if v and (not best_v or v > best_v) then
+      best, best_v = p, v
+    end
+  end
+  return best
+end
+
+local function vscode_roslyn_cmd()
+  local home = vim.uv.os_homedir()
+  local dll = newest(
+    vim.fn.glob(home .. "/.vscode/extensions/ms-dotnettools.csharp-*/.roslyn/Microsoft.CodeAnalysis.LanguageServer.dll", false, true),
+    "csharp%-([%d.]+)"
+  )
+  if not dll then
+    return nil
+  end
+  local win = vim.fn.has("win32") == 1
+  local storage = win and vim.env.APPDATA .. "/Code/User/globalStorage" or home .. "/.config/Code/User/globalStorage"
+  local dotnet = newest(
+    vim.fn.glob(storage .. "/ms-dotnettools.vscode-dotnet-runtime/.dotnet/*/dotnet" .. (win and ".exe" or ""), false, true),
+    "%.dotnet[/\\]([%d.]+)"
+  ) or "dotnet" -- the extension didn't need its own runtime, so the system one is new enough
+  return {
+    dotnet,
+    dll,
+    "--stdio",
+    "--logLevel=Information",
+    "--extensionLogDirectory=" .. vim.fn.stdpath("log") .. "/roslyn",
+  }
+end
+
+local csharp_ls = "omnisharp"
+if vim.fn.executable("roslyn-language-server") == 1 then
+  csharp_ls = "roslyn_ls" -- Mason's install; lspconfig's default cmd finds it
+else
+  local cmd = vscode_roslyn_cmd()
+  if cmd then
+    vim.lsp.config("roslyn_ls", { cmd = cmd })
+    csharp_ls = "roslyn_ls"
+  end
+end
+
+-- OmniSharp's semantic token legend is malformed (token names with spaces), which is what
+-- got the server shut down before, so drop that capability and let treesitter highlight.
 vim.lsp.config("omnisharp", {
   on_init = function(client)
     client.server_capabilities.semanticTokensProvider = nil
@@ -72,7 +121,7 @@ vim.lsp.config("omnisharp", {
 vim.lsp.enable({
   "lua_ls",
   "rust_analyzer",
-  "omnisharp", -- C#; install with :MasonInstall omnisharp
+  csharp_ls, -- roslyn_ls or omnisharp (:MasonInstall omnisharp), picked above
   "ts_ls",
   "pyright",
   "gopls",

@@ -23,7 +23,13 @@ end
 
 vim.api.nvim_create_autocmd("FileType", {
   callback = function(ev)
-    if pcall(vim.treesitter.start, ev.buf) then
+    if not pcall(vim.treesitter.start, ev.buf) then
+      return
+    end
+    -- Without an indents query (e.g. c_sharp) the treesitter indentexpr returns 0 for
+    -- every line, so keep the filetype's own indent script instead
+    local lang = vim.treesitter.language.get_lang(vim.bo[ev.buf].filetype)
+    if lang and #vim.treesitter.query.get_files(lang, "indents") > 0 then
       vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
     end
   end,

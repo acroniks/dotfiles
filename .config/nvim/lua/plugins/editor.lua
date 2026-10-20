@@ -2,7 +2,6 @@
 local map = vim.keymap.set
 
 vim.pack.add({
-  { src = "https://github.com/windwp/nvim-autopairs" },
   { src = "https://github.com/nvim-tree/nvim-tree.lua" },
   { src = "https://github.com/nvim-tree/nvim-web-devicons" },
   { src = "https://github.com/fouladi/toggle-overlength.nvim" },
@@ -11,9 +10,6 @@ vim.pack.add({
   { src = "https://github.com/echasnovski/mini.nvim" },
   { src = "https://github.com/mg979/vim-visual-multi" },
 })
-
--- Autopairs
-require("nvim-autopairs").setup({})
 
 -- File explorer
 require("nvim-tree").setup({
@@ -37,7 +33,8 @@ require("which-key").setup({})
 -- Git signs in the gutter
 require("gitsigns").setup({})
 
--- mini.nvim collection (pairs are handled by nvim-autopairs above)
+-- mini.nvim collection
+require("mini.pairs").setup()
 require("mini.surround").setup()
 require("mini.comment").setup()
 require("mini.statusline").setup()

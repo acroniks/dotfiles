@@ -53,11 +53,25 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+-- OmniSharp instead of roslyn_ls: roslyn-language-server needs .NET 10, this works on .NET 8.
+-- Its semantic token legend is malformed (token names with spaces), which is what got the
+-- server shut down before, so drop that capability and let treesitter do highlighting.
+vim.lsp.config("omnisharp", {
+  on_init = function(client)
+    client.server_capabilities.semanticTokensProvider = nil
+  end,
+  settings = {
+    RoslynExtensionsOptions = {
+      EnableImportCompletion = true,
+    },
+  },
+})
+
 -- Names must match the files in nvim-lspconfig's lsp/ directory
 vim.lsp.enable({
   "lua_ls",
   "rust_analyzer",
-  "roslyn_ls", -- C#; replaced omnisharp, which sends malformed messages and gets shut down
+  "omnisharp", -- C#; install with :MasonInstall omnisharp
   "ts_ls",
   "pyright",
   "gopls",

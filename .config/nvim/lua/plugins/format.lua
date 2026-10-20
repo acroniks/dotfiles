@@ -1,7 +1,9 @@
 -- lua/plugins/format.lua
 -- conform.nvim runs a dedicated formatter per filetype and falls back to the LSP's
 -- formatter when none is listed or none of the listed ones is installed.
--- Install formatters with Mason, e.g. :MasonInstall csharpier stylua
+-- Install formatters with Mason, e.g. :MasonInstall stylua
+-- C# is left to the LSP on purpose: Roslyn/OmniSharp is already running (~30ms vs ~1.7s for
+-- csharpier's cold start) and applies all of .editorconfig's C# formatting rules.
 local map = vim.keymap.set
 
 vim.pack.add({
@@ -10,7 +12,6 @@ vim.pack.add({
 
 require("conform").setup({
   formatters_by_ft = {
-    cs = { "csharpier" },
     lua = { "stylua" },
     rust = { "rustfmt" },
   },

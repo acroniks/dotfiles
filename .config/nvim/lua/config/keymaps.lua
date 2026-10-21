@@ -1,9 +1,6 @@
 -- lua/config/keymaps.lua
 local map = vim.keymap.set
 
--- Save and re-source the current file
-map("n", "<leader>o", "<cmd>update<CR><cmd>source<CR>", { desc = "Save and source file" })
-
 -- Window navigation
 map("n", "<leader><Tab>", "<C-w>w", { desc = "Next window" })
 -- map("n", "<leader>h", "<C-w>h", { desc = "Go to left window" })
